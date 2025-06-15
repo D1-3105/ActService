@@ -1,0 +1,11 @@
+{
+  "TestActCall": {
+    "ACT_BINARY_PATH": "/tmp/act",
+    "ACT_DOCKER_CONTEXT_PATH": "unix:///var/run/docker.sock"
+  },
+
+  "TestListenJob": {
+    "ACT_BINARY_PATH": "/tmp/act",
+    "ACT_DOCKER_CONTEXT_PATH": "unix:///var/run/docker.sock"
+  }
+}

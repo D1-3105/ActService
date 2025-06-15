@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package actservice;
+
+option go_package = "github.com/D1-3105/ActService/actservice;actservice";
+
+service ActService {
+  rpc ScheduleActJob(Job) returns (JobResponse);
+  rpc JobLogStream(JobLogRequest) returns (stream JobLogMessage);
+}
+
+message Job {
+  string repo_url = 1;
+  string commit_id = 2;
+}
+
+message JobResponse {
+  string job_id = 1;
+}
+
+message JobLogRequest {
+  string job_id = 1;
+  uint64 last_offset = 2;
+}
+
+message JobLogMessage {
+  enum OutputType {
+    STDOUT = 0;
+    STDERR = 1;
+  }
+
+  int64 timestamp = 1;
+  OutputType type = 2;
+  string line = 3;
+}
