@@ -11,6 +11,7 @@ on:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
+  workflow_dispatch:
 
 jobs:
   test:
