@@ -71,14 +71,17 @@ func NewActOutput(ctx context.Context, cmd *exec.Cmd) CommandOutput {
 
 func (out *ActOutput) ProgramError() chan error { return out.ProgramErrorChan }
 
-func (out *ActOutput) AddOutput(line []byte, type_ ProcessOutType) {
+func (out *ActOutput) AddOutput(ctx context.Context, line []byte, type_ ProcessOutType) {
 	select {
+	case <-ctx.Done():
+		break
 	case out.outChan <- SingleOutput{
 		T:    type_,
 		line: line,
 		Time: time.Now(),
 	}:
 		glog.Infof("Process %d - new output from %v", out.process.Pid, type_)
+		break
 	default:
 	}
 }

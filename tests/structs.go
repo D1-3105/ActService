@@ -22,12 +22,12 @@ func (d *DummyJobOutput) ProgramError() chan error {
 	return d.programmaticError
 }
 
-func (d *DummyJobOutput) AddOutput(line []byte, type_ actCmd.ProcessOutType) {
+func (d *DummyJobOutput) AddOutput(_ context.Context, _ []byte, _ actCmd.ProcessOutType) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (d *DummyJobOutput) SetExitCode(val int) {
+func (d *DummyJobOutput) SetExitCode(_ int) {
 	//TODO implement me
 	panic("implement me")
 }

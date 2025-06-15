@@ -76,7 +76,6 @@ func (service *ActService) ScheduleActJob(ctx context.Context, job *actservice.J
 		// finalizer
 		func() {
 			defer dispose()
-			defer output.Close()
 			defer delete(service.JobCtxCancels, jobUid)
 			defer func(fileListenersCtx *ActService_listen_file.LogFileListeners, id string) {
 				err := fileListenersCtx.CancelLogListeners(id)

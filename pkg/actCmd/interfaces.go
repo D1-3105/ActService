@@ -1,7 +1,9 @@
 package actCmd
 
+import "context"
+
 type CommandOutput interface {
-	AddOutput(line []byte, type_ ProcessOutType)
+	AddOutput(ctx context.Context, line []byte, type_ ProcessOutType)
 	SetExitCode(val int)
 
 	GetExitCode() chan int

@@ -25,7 +25,6 @@ func fixtureGenOutput(t *testing.T) *bytes.Buffer {
 		writeBuf,
 		"random-string",
 		func() {
-			defer dummy.Close()
 			finalizedJob = true
 			cancelJob()
 		},

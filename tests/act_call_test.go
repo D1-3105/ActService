@@ -70,7 +70,6 @@ func TestActCall(t *testing.T) {
 	defer func() { _ = cloned.Dispose() }()
 	output, err := actCommand.Call(t.Context())
 	require.NoError(t, err)
-	defer output.Close()
 
 	timeout := time.After(1000 * time.Second)
 	for {

@@ -52,18 +52,25 @@ func (a *ActCommand) Call(ctx context.Context) (CommandOutput, error) {
 
 	actOutput := NewActOutput(ctx, cmd)
 
-	readPipe := func(pipe io.Reader, outType ProcessOutType) {
+	readPipe := func(ctx context.Context, pipe io.Reader, outType ProcessOutType) {
+
 		scanner := bufio.NewScanner(pipe)
 		for scanner.Scan() {
-			actOutput.AddOutput(scanner.Bytes(), outType)
+			actOutput.AddOutput(ctx, scanner.Bytes(), outType)
 		}
 		if err := scanner.Err(); err != nil {
 			glog.Errorf("Error scanning output: %s", err)
 		}
 	}
-
-	go readPipe(stdout, StdOut)
-	go readPipe(stderr, StdErr)
+	go func(ctx context.Context) {
+		defer actOutput.Close()
+		go readPipe(ctx, stdout, StdOut)
+		go readPipe(ctx, stderr, StdErr)
+		select {
+		case <-ctx.Done():
+			return
+		}
+	}(ctx)
 
 	return actOutput, nil
 }

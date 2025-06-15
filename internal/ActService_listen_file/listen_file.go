@@ -22,16 +22,20 @@ func ListenFile(
 ) error {
 	defer finalizer()
 	defer close(yieldChan)
+	defer close(endIterCause.EndIter)
 
 	reader := protoio.NewReader(jobFile)
 	curOffset := 0
 
-	die := make(chan bool, 1)
+	die := make(chan bool, 3)
 	eofIo := make(chan bool, 1)
 	errorChan := make(chan error, 1)
 
+	readerCtx, readerCancel := context.WithCancel(context.Background())
+	defer readerCancel()
 	// Watcher goroutine
-	go func() {
+	go func(ctx context.Context) {
+		defer readerCancel()
 		for {
 			select {
 			case <-ctx.Done():
@@ -51,13 +55,10 @@ func ListenFile(
 				}
 			}
 		}
-	}()
-
-	readerCtx, readerCancel := context.WithCancel(context.Background())
-	defer readerCancel()
+	}(ctx)
 
 	// Reader goroutine
-	go func() {
+	go func(ctx context.Context) {
 		var blackHole actservice.JobLogMessage
 		// Skip up to readOffset
 		for curOffset < int(readOffset) {
@@ -130,7 +131,7 @@ func ListenFile(
 				curOffset++
 			}
 		}
-	}()
+	}(readerCtx)
 
 	// Main control loop
 	for {
