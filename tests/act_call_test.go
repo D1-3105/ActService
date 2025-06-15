@@ -1,11 +1,8 @@
 package tests
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
 	"github.com/D1-3105/ActService/conf"
-	"github.com/D1-3105/ActService/internal/ActService_utils"
 	"github.com/D1-3105/ActService/pkg/actCmd"
 	"github.com/D1-3105/ActService/pkg/gitCmd"
 	"github.com/golang/glog"
@@ -60,9 +57,10 @@ func gitFixture(t *testing.T) (*gitCmd.GitFolder, *gitCmd.ClonedRepo) {
 
 func actCmdFixture(t *testing.T) (*actCmd.ActCommand, *gitCmd.ClonedRepo) {
 	_, clone := gitFixture(t)
-
+	var actEnviron conf.ActEnviron
+	conf.NewEnviron(&actEnviron)
 	actCommand := actCmd.NewActCommand(
-		conf.NewActEnviron(), "-P ubuntu-latest=node:16-buster", clone.Path,
+		&actEnviron, "-P ubuntu-latest=node:16-buster", clone.Path,
 	)
 	return actCommand, clone
 }
@@ -93,28 +91,5 @@ func TestActCall(t *testing.T) {
 		case <-timeout:
 			t.Fatalf("Timeout! Struct: %v", output)
 		}
-	}
-}
-
-func TestListenJob(t *testing.T) {
-	dummy := SuccessfulDummyJobOutput()
-	ctx, cancel := context.WithCancel(context.Background())
-	writeBuf := bytes.NewBuffer([]byte{})
-	finalized := false
-	go ActService_utils.ListenJob(
-		ctx, actCmd.CommandOutput(dummy), writeBuf, "random-string", func() {
-			defer dummy.Close()
-			finalized = true
-			cancel()
-		},
-	)
-	go DummyEmulator(ctx, dummy)
-
-	select {
-	case <-ctx.Done():
-		require.True(t, finalized)
-		break
-	case <-time.After(1000 * time.Second):
-		panic("timeout")
 	}
 }

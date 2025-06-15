@@ -2,7 +2,6 @@ package conf
 
 import (
 	"github.com/caarlos0/env/v11"
-	"log"
 )
 
 type ActEnviron struct {
@@ -14,10 +13,8 @@ type StorageEnviron struct {
 	LogFileStorageRoot string `env:"LOG_FILE_STORAGE"`
 }
 
-func NewActEnviron() *ActEnviron {
-	var actEnviron ActEnviron
-	if err := env.Parse(&actEnviron); err != nil {
-		log.Fatal(err)
+func NewEnviron(environ any) {
+	if err := env.Parse(environ); err != nil {
+		panic(err)
 	}
-	return &actEnviron
 }

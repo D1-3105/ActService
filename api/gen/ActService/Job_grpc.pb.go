@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	ActService_ScheduleActJob_FullMethodName = "/actservice.ActService/ScheduleActJob"
+	ActService_CancelActJob_FullMethodName   = "/actservice.ActService/CancelActJob"
 	ActService_JobLogStream_FullMethodName   = "/actservice.ActService/JobLogStream"
 )
 
@@ -28,6 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ActServiceClient interface {
 	ScheduleActJob(ctx context.Context, in *Job, opts ...grpc.CallOption) (*JobResponse, error)
+	CancelActJob(ctx context.Context, in *CancelJob, opts ...grpc.CallOption) (*CancelJobResult, error)
 	JobLogStream(ctx context.Context, in *JobLogRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[JobLogMessage], error)
 }
 
@@ -43,6 +45,16 @@ func (c *actServiceClient) ScheduleActJob(ctx context.Context, in *Job, opts ...
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(JobResponse)
 	err := c.cc.Invoke(ctx, ActService_ScheduleActJob_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *actServiceClient) CancelActJob(ctx context.Context, in *CancelJob, opts ...grpc.CallOption) (*CancelJobResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CancelJobResult)
+	err := c.cc.Invoke(ctx, ActService_CancelActJob_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +85,7 @@ type ActService_JobLogStreamClient = grpc.ServerStreamingClient[JobLogMessage]
 // for forward compatibility.
 type ActServiceServer interface {
 	ScheduleActJob(context.Context, *Job) (*JobResponse, error)
+	CancelActJob(context.Context, *CancelJob) (*CancelJobResult, error)
 	JobLogStream(*JobLogRequest, grpc.ServerStreamingServer[JobLogMessage]) error
 	mustEmbedUnimplementedActServiceServer()
 }
@@ -86,6 +99,9 @@ type UnimplementedActServiceServer struct{}
 
 func (UnimplementedActServiceServer) ScheduleActJob(context.Context, *Job) (*JobResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ScheduleActJob not implemented")
+}
+func (UnimplementedActServiceServer) CancelActJob(context.Context, *CancelJob) (*CancelJobResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelActJob not implemented")
 }
 func (UnimplementedActServiceServer) JobLogStream(*JobLogRequest, grpc.ServerStreamingServer[JobLogMessage]) error {
 	return status.Errorf(codes.Unimplemented, "method JobLogStream not implemented")
@@ -129,6 +145,24 @@ func _ActService_ScheduleActJob_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ActService_CancelActJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelJob)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ActServiceServer).CancelActJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ActService_CancelActJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ActServiceServer).CancelActJob(ctx, req.(*CancelJob))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ActService_JobLogStream_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(JobLogRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -150,6 +184,10 @@ var ActService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ScheduleActJob",
 			Handler:    _ActService_ScheduleActJob_Handler,
+		},
+		{
+			MethodName: "CancelActJob",
+			Handler:    _ActService_CancelActJob_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

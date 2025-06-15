@@ -1,0 +1,9 @@
+{
+  "TestScheduleActJob":{
+    "ACT_BINARY_PATH": "/second/disk/act/act/dist/local/act",
+    "ACT_DOCKER_CONTEXT_PATH": "unix:///var/run/docker.sock",
+    "commit_id": "5c6f585b1f9d8526c8e1672c5f8f00883b895d93",
+    "repo_url": "https://github.com/cplee/github-actions-demo.git",
+    "LOG_FILE_STORAGE": "/tmp"
+  }
+}

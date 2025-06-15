@@ -1,11 +1,11 @@
-package ActService_utils
+package ActService_listen_job
 
 import (
 	"context"
 	"github.com/D1-3105/ActService/api/gen/ActService"
 	"github.com/D1-3105/ActService/pkg/actCmd"
 	"github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
+	"github.com/sebnyberg/protoio"
 	"io"
 )
 
@@ -13,6 +13,8 @@ func ListenJob(
 	ctx context.Context, output actCmd.CommandOutput, jobFile io.Writer, jobUUID string, finalizer func(),
 ) {
 	defer finalizer()
+	writer := protoio.NewWriter(jobFile)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -23,24 +25,15 @@ func ListenJob(
 				Type:      actservice.JobLogMessage_OutputType(out.T),
 				Line:      out.Line(),
 			}
-			outSerialized, err := proto.Marshal(&m)
-			if err != nil {
-				glog.Errorf("Failed to serialize job output: %v; struct: %v", err, out)
-				continue
+			if err := writer.WriteMsg(&m); err != nil {
+				glog.Errorf("Failed to write protobuf message to file: %v; job uuid: %s", err, jobUUID)
 			}
-			_, err = jobFile.Write(outSerialized)
-			if err != nil {
-				glog.Errorf("Error writing to job >%s< file: %v", jobUUID, err)
-				continue
-			}
-			break
 		case programError := <-output.ProgramError():
 			if programError != nil {
-				glog.Errorf("Error of corresponding job: %v; job uuid: %s;", programError, jobUUID)
+				glog.Errorf("Program error for job %s: %v", jobUUID, programError)
 			}
-			break
 		case exitCode := <-output.GetExitCode():
-			glog.Infof("Received exit code for job %s: %d", jobUUID, exitCode)
+			glog.Infof("Job %s exited with code: %d", jobUUID, exitCode)
 			return
 		}
 	}

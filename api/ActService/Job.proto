@@ -6,9 +6,11 @@ option go_package = "github.com/D1-3105/ActService/actservice;actservice";
 
 service ActService {
   rpc ScheduleActJob(Job) returns (JobResponse);
+  rpc CancelActJob(CancelJob) returns (CancelJobResult);
   rpc JobLogStream(JobLogRequest) returns (stream JobLogMessage);
 }
 
+// job
 message Job {
   string repo_url = 1;
   string commit_id = 2;
@@ -17,7 +19,21 @@ message Job {
 message JobResponse {
   string job_id = 1;
 }
+// # end job
 
+
+// cancel
+message CancelJob {
+  string job_id = 1;
+}
+
+message CancelJobResult{
+  string status = 1;
+}
+// # end cancel
+
+
+// log
 message JobLogRequest {
   string job_id = 1;
   uint64 last_offset = 2;
@@ -33,3 +49,4 @@ message JobLogMessage {
   OutputType type = 2;
   string line = 3;
 }
+// # end log
