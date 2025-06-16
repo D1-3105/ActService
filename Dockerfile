@@ -6,7 +6,6 @@ COPY . /actor
 WORKDIR /actor
 RUN go mod tidy
 
-RUN make compile_grpc
 RUN make install_act_persistent
 
 RUN go build -o /bin/actor main.go
