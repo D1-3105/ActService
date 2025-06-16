@@ -20,11 +20,9 @@ install_act_persistent:
 	curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nektos/act/master/install.sh | bash
 	mv bin/act /bin/act
 
-docker_builder:
-	docker build -t builder ./Dockerfile.build
 
 docker_final:
-	docker build -t ${DOCKER_IMAGE_NAME} ./Dockerfile.final
+	docker build -t ${DOCKER_IMAGE_NAME} .
 
 registry_login:
 	echo "${REGISTRY_PASSWORD}" | docker login -u ${REGISTRY_USER} --password-stdin 2>/dev/null || true
@@ -32,7 +30,7 @@ registry_login:
 push_image:
 	docker push ${DOCKER_IMAGE_NAME}
 
-upload_docker_artifacts: registry_login docker_builder docker_final push_image
+upload_docker_artifacts: registry_login docker_final push_image
 
 test:
 	go test -v ./tests -args -logtostderr=true -v=1

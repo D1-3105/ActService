@@ -1,3 +1,0 @@
-FROM gcr.io/distroless/static:nonroot
-COPY --from=builder /actor/actor /actor
-ENTRYPOINT ["/actor"]
