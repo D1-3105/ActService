@@ -9,6 +9,10 @@ type ActEnviron struct {
 	DockerContextPath string `env:"ACT_DOCKER_CONTEXT_PATH"`
 }
 
+type ServerEnviron struct {
+	GRPCAddr string `env:"GRPC_ADDR" envDefault:":50051"`
+}
+
 type StorageEnviron struct {
 	LogFileStorageRoot string `env:"LOG_FILE_STORAGE"`
 }
