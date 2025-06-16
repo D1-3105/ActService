@@ -80,7 +80,7 @@ func (out *ActOutput) AddOutput(ctx context.Context, line []byte, type_ ProcessO
 		line: line,
 		Time: time.Now(),
 	}:
-		glog.Warningf("Process %d - new output from %v", out.process.Pid, type_)
+		glog.V(2).Infof("Process %d - new output from %v", out.process.Pid, type_)
 		break
 	default:
 	}

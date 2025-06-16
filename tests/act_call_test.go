@@ -76,11 +76,11 @@ func TestActCall(t *testing.T) {
 		select {
 		case out := <-output.GetOutputChan():
 			text := out.FormatRead()
-			glog.Info(text)
+			glog.V(1).Info(text)
 			glog.Flush()
 			break
 		case exitCode := <-output.GetExitCode():
-			glog.Infof("Exit code: %d", exitCode)
+			glog.V(1).Infof("Exit code: %d", exitCode)
 			require.Equal(t, 0, exitCode)
 			return
 		case err := <-output.ProgramError():

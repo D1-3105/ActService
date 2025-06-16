@@ -45,7 +45,7 @@ func (service *ActService) ScheduleActJob(ctx context.Context, job *actservice.J
 	var actEnv conf.ActEnviron
 	conf.NewEnviron(&actEnv)
 
-	glog.Infof("ActService.ScheduleActJob: job uid: %s", jobUid)
+	glog.V(1).Infof("ActService.ScheduleActJob: job uid: %s", jobUid)
 	gitFolder, err := gitCmd.NewGitFolder(
 		&gitCmd.GitRepo{
 			Url:      job.RepoUrl,
@@ -88,7 +88,7 @@ func (service *ActService) ScheduleActJob(ctx context.Context, job *actservice.J
 			defer delete(service.JobCtxCancels, jobUid)
 			defer func(fileListenersCtx *ActService_listen_file.LogFileListeners, id string) {
 				err := fileListenersCtx.JobDone(id)
-				glog.Infof("ActService.ScheduleActJob: JobDone: id: %s, err: %v", id, err)
+				glog.V(1).Infof("ActService.ScheduleActJob: JobDone: id: %s, err: %v", id, err)
 			}(service.FileListenersPool, jobUid)
 			_ = jobFile.Close()
 		},
@@ -104,7 +104,7 @@ func (service *ActService) JobLogStream(
 	if err != nil {
 		return err
 	}
-	glog.Infof("Listening to %s", jobFile.Name())
+	glog.V(1).Infof("Listening to %s", jobFile.Name())
 	defer func(jobFile *os.File) {
 		_ = jobFile.Close()
 	}(jobFile)
@@ -150,9 +150,9 @@ func (service *ActService) JobLogStream(
 				glog.Errorf("ActService.JobLogStream[%s]: Send: %v", request.JobId, err)
 				return err
 			}
-			glog.Warningf("ActService.JobLogStream[%s]: Send: %v", request.JobId, msg)
+			glog.V(2).Infof("ActService.JobLogStream[%s]: Send: %v", request.JobId, msg)
 		case <-time.After(5 * time.Minute):
-			glog.Infof("ActService.JobLogStream[%s]: timeout waiting for messages", request.JobId)
+			glog.V(1).Infof("ActService.JobLogStream[%s]: timeout waiting for messages", request.JobId)
 			return nil
 		}
 	}

@@ -27,7 +27,7 @@ func newTestListener(t *testing.T, ls *ActService_listen_file.ListenerSet) (*Act
 	finalizerWrapper := func() {
 		finalizer()
 		finalized <- true
-		glog.Info("finalizer called")
+		glog.V(1).Info("finalizer called")
 	}
 	require.NoError(t, err)
 	// will be blocked
@@ -54,7 +54,7 @@ func TestAddListener(t *testing.T) {
 	listener.ForceCancel()
 	select {
 	case <-finalized:
-		glog.Info("Listener was finalized")
+		glog.V(1).Info("Listener was finalized")
 		break
 	case <-time.After(time.Second * 10):
 		require.Fail(t, "Listener was not finalized")
@@ -65,7 +65,7 @@ func checkFinalizers(t *testing.T, channels []chan bool) {
 	for idx, channel := range channels {
 		select {
 		case <-channel:
-			glog.Info("Listener was finalized")
+			glog.V(1).Info("Listener was finalized")
 			break
 		case <-time.After(time.Second * 5):
 			require.Fail(t, fmt.Sprintf("Listener %d was not finalized", idx))

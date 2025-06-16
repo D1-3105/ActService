@@ -12,5 +12,5 @@ install_act:
 	mv bin/act /tmp/act
 
 test:
-	go test ./tests -v -args -logtostderr=true
+	go test -v ./tests -args -logtostderr=true -v=1
 

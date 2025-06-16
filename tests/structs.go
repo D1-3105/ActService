@@ -63,12 +63,12 @@ func DummyEmulator(_ context.Context, dummy *DummyJobOutput) {
 		for i := 0; i < 5; i++ {
 			output := actCmd.SingleOutput{T: actCmd.StdOut, Time: time.Now()}
 			output.SetLine([]byte(fmt.Sprintf("line %d", i+1)))
-			glog.Info("Input output:", output)
+			glog.V(1).Info("Input output:", output)
 			dummy.outputChan <- output
 
 			output2 := actCmd.SingleOutput{T: actCmd.StdErr, Time: time.Now()}
 			output2.SetLine([]byte(fmt.Sprintf("line %d", i+1)))
-			glog.Info("Input output2:", output2)
+			glog.V(1).Info("Input output2:", output2)
 			dummy.outputChan <- output2
 			time.Sleep(1 * time.Second)
 		}

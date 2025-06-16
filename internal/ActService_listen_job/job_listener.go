@@ -41,7 +41,7 @@ func ListenJob(
 				glog.Errorf("Program error for job %s: %v", jobUUID, programError)
 			}
 		case exitCode := <-output.GetExitCode():
-			glog.Infof("Job %s exited with code: %d", jobUUID, exitCode)
+			glog.V(1).Infof("Job %s exited with code: %d", jobUUID, exitCode)
 			return
 		}
 	}

@@ -30,7 +30,7 @@ func (a *ActCommand) getExportString() string {
 }
 
 func (a *ActCommand) Call(ctx context.Context) (CommandOutput, error) {
-	glog.Infof("Act Command Call: >>%s<< in %s", a.env.ActBinaryPath+" "+a.callSubCommand, a.cwd)
+	glog.V(1).Infof("Act Command Call: >>%s<< in %s", a.env.ActBinaryPath+" "+a.callSubCommand, a.cwd)
 	cmd := exec.CommandContext(ctx, a.env.ActBinaryPath, a.callSubCommand)
 	cmd.Env = append(os.Environ(), a.getExportString())
 	cmd.Dir = a.cwd
@@ -48,7 +48,7 @@ func (a *ActCommand) Call(ctx context.Context) (CommandOutput, error) {
 		return nil, err
 	}
 
-	glog.Infof("Started new process: %d", cmd.Process.Pid)
+	glog.V(1).Infof("Started new process: %d", cmd.Process.Pid)
 
 	actOutput := NewActOutput(ctx, cmd)
 

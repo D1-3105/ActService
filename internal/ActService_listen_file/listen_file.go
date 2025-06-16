@@ -42,7 +42,7 @@ func ListenFile(
 				die <- true
 				return
 			case end := <-endIterCause.EndIter:
-				glog.Warningf("Received EndIter: %v for writer %v", end, jobFile)
+				glog.V(2).Infof("Received EndIter: %v for writer %v", end, jobFile)
 				die <- end
 				return
 			case eof := <-eofIo:
@@ -50,7 +50,7 @@ func ListenFile(
 				select {
 				case die <- shallDie:
 					if shallDie {
-						glog.Warningf(
+						glog.V(2).Infof(
 							"shallDie %t=[%t and %t] sent to bound channel for writer %v",
 							shallDie, eof, endIterCause.EndOnEOF, jobFile,
 						)
@@ -99,7 +99,7 @@ func ListenFile(
 			}
 			curOffset++
 			if curOffset%everyX == 0 {
-				glog.Warningf("Skipped line num %d", curOffset)
+				glog.V(2).Infof("Skipped line num %d", curOffset)
 			}
 		}
 
@@ -145,7 +145,7 @@ func ListenFile(
 				}
 				curOffset++
 				if curOffset%everyX == 0 {
-					glog.Warningf("Streamed line num %d from %v", curOffset, jobFile)
+					glog.V(2).Infof("Streamed line num %d from %v", curOffset, jobFile)
 				}
 			}
 		}
@@ -155,10 +155,10 @@ func ListenFile(
 	for {
 		select {
 		case err := <-errorChan:
-			glog.Warningf("Error while reading jobFile [%v] message: %v;", jobFile, err)
+			glog.V(2).Infof("Error while reading jobFile [%v] message: %v;", jobFile, err)
 			return err
 		case <-readerCtx.Done():
-			glog.Warningf("readerCtx.Done for reader obj %v", jobFile)
+			glog.V(2).Infof("readerCtx.Done for reader obj %v", jobFile)
 			return nil
 		}
 	}

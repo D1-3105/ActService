@@ -26,7 +26,7 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 
 	id := uuid.New()
 	pth := filepath.Join(gf.Path, id.String())
-	glog.Infof("Cloning git repo %s -> %s", gf.Repo.Url, pth)
+	glog.V(1).Infof("Cloning git repo %s -> %s", gf.Repo.Url, pth)
 	clone, err := git.PlainClone(pth, false, &git.CloneOptions{URL: gf.Repo.Url, Depth: 1})
 	if err != nil {
 		glog.Errorf("Error cloning git repo %s: %v", gf.Repo.Url, err)
