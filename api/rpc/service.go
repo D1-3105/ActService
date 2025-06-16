@@ -2,6 +2,8 @@ package rpc
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	actservice "github.com/D1-3105/ActService/api/gen/ActService"
 	"github.com/D1-3105/ActService/conf"
 	"github.com/D1-3105/ActService/internal/ActService_listen_file"
@@ -156,4 +158,17 @@ func (service *ActService) JobLogStream(
 			return nil
 		}
 	}
+}
+
+func (service *ActService) CancelActJob(
+	_ context.Context, cancelJob *actservice.CancelJob,
+) (*actservice.CancelJobResult, error) {
+	jobCtx, ok := service.JobCtxCancels[cancelJob.JobId]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("CancelJob: Job %s not found", cancelJob.JobId))
+	}
+	jobCtx()
+	return &actservice.CancelJobResult{
+		Status: fmt.Sprintf("Cancelled job %s", cancelJob.JobId),
+	}, nil
 }

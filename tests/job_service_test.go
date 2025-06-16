@@ -98,3 +98,74 @@ messageLoop:
 	logFilePath := filepath.Join(testConf["LOG_FILE_STORAGE"], resp.JobId)
 	_ = os.Remove(logFilePath)
 }
+
+func TestScheduleActJob_and_Cancel(t *testing.T) {
+	testConf := fixtureJobServiceTestConf(t)
+	t.Setenv("ACT_BINARY_PATH", testConf["ACT_BINARY_PATH"])
+	t.Setenv("ACT_DOCKER_CONTEXT_PATH", testConf["ACT_DOCKER_CONTEXT_PATH"])
+	t.Setenv("LOG_FILE_STORAGE", testConf["LOG_FILE_STORAGE"])
+
+	svc := rpc.ActService{
+		FileListenersPool: ActService_listen_file.NewFileListeners(),
+		JobCtxCancels:     make(map[string]context.CancelFunc),
+	}
+
+	resp, err := svc.ScheduleActJob(context.Background(), &actservice.Job{
+		RepoUrl:  testConf["repo_url"],
+		CommitId: testConf["commit_id"],
+	})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.NotEmpty(t, resp.JobId)
+
+	cancelFunc, exists := svc.JobCtxCancels[resp.JobId]
+	require.True(t, exists)
+	require.NotNil(t, cancelFunc)
+
+	stream := NewMockStream()
+	req := &actservice.JobLogRequest{
+		JobId:      resp.JobId,
+		LastOffset: 0,
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- svc.JobLogStream(req, stream)
+	}()
+	messageCount := 0
+loop:
+	for {
+		select {
+		case msg := <-stream.messages:
+			t.Logf("[%s] %s", msg.Type.String(), msg.Line)
+			require.NotEmpty(t, msg.Line)
+			messageCount++
+			if messageCount >= 5 {
+				break loop
+			}
+		case <-time.After(10 * time.Second):
+			require.Fail(t, "timeout waiting for log messages before cancel")
+			break loop
+		}
+	}
+
+	cancelResp, err := svc.CancelActJob(context.Background(), &actservice.CancelJob{
+		JobId: resp.JobId,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, cancelResp)
+	t.Logf("Cancel response: %s", cancelResp.Status)
+
+	select {
+	case err := <-errCh:
+		require.NoError(t, err)
+	case <-time.After(10 * time.Second):
+		t.Fatal("timeout waiting for stream to finish after cancel")
+	}
+
+	_, existsAfterCancel := svc.JobCtxCancels[resp.JobId]
+	require.False(t, existsAfterCancel, "jobCtxCancels map should not contain canceled job")
+
+	logFilePath := filepath.Join(testConf["LOG_FILE_STORAGE"], resp.JobId)
+	_ = os.Remove(logFilePath)
+}
