@@ -163,9 +163,10 @@ loop:
 		t.Fatal("timeout waiting for stream to finish after cancel")
 	}
 
-	_, existsAfterCancel := svc.JobCtxCancels[resp.JobId]
-	time.Sleep(5)
-	require.False(t, existsAfterCancel, "jobCtxCancels map should not contain canceled job")
+	require.Eventually(t, func() bool {
+		_, stillExists := svc.JobCtxCancels[resp.JobId]
+		return !stillExists
+	}, 20*time.Second, 100*time.Millisecond, "jobCtxCancels map should not contain canceled job")
 
 	logFilePath := filepath.Join(testConf["LOG_FILE_STORAGE"], resp.JobId)
 	_ = os.Remove(logFilePath)
