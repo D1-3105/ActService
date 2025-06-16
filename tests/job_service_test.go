@@ -164,6 +164,7 @@ loop:
 	}
 
 	_, existsAfterCancel := svc.JobCtxCancels[resp.JobId]
+	time.Sleep(5)
 	require.False(t, existsAfterCancel, "jobCtxCancels map should not contain canceled job")
 
 	logFilePath := filepath.Join(testConf["LOG_FILE_STORAGE"], resp.JobId)
