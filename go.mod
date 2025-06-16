@@ -7,7 +7,6 @@ require (
 	github.com/go-git/go-git/v5 v5.16.2
 	github.com/golang/glog v1.2.5
 	github.com/google/uuid v1.6.0
-	github.com/sebnyberg/protoio v1.0.3
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/net v0.39.0
 	google.golang.org/grpc v1.73.0

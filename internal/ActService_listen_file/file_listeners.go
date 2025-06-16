@@ -34,6 +34,17 @@ func (l *LogFileListeners) CancelLogListeners(id string) error {
 	return nil
 }
 
+func (l *LogFileListeners) JobDone(id string) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	listeners, ok := l.listenerPool[id]
+	if !ok {
+		return errors.New(fmt.Sprintf("listeners of job %s do not exist, noop", id))
+	}
+	listeners.SetExitOnEof()
+	return nil
+}
+
 func (l *LogFileListeners) AddListener(id string, listener *InProgressListener) (func(), error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()

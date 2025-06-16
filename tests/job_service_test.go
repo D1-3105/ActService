@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/D1-3105/ActService/internal/ActService_listen_file"
 	"github.com/stretchr/testify/require"
@@ -37,7 +38,7 @@ func fixtureJobServiceTestConf(t *testing.T) map[string]string {
 	return cnf
 }
 
-func TestScheduleActJob(t *testing.T) {
+func TestScheduleActJob_to_JobLogStream(t *testing.T) {
 	testConf := fixtureJobServiceTestConf(t)
 	t.Setenv("ACT_BINARY_PATH", testConf["ACT_BINARY_PATH"])
 	t.Setenv("ACT_DOCKER_CONTEXT_PATH", testConf["ACT_DOCKER_CONTEXT_PATH"])
@@ -60,6 +61,40 @@ func TestScheduleActJob(t *testing.T) {
 	require.True(t, exists, "expected jobCtxCancels to contain job id")
 	require.NotNil(t, cancelFunc)
 
-	// cleanup
-	cancelFunc()
+	stream := NewMockStream()
+	req := &actservice.JobLogRequest{
+		JobId:      resp.JobId,
+		LastOffset: 0,
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- svc.JobLogStream(req, stream)
+	}()
+
+	timeout := time.After(30 * time.Second)
+	messageCount := 0
+
+messageLoop:
+	for {
+		select {
+		case msg := <-stream.messages:
+			t.Logf("[%s] %s", msg.Type.String(), msg.Line)
+			require.NotEmpty(t, msg.Line)
+			messageCount++
+			continue
+		case <-timeout:
+			cancelFunc()
+			require.NoError(t, <-errCh)
+			if messageCount < 20 {
+				require.Fail(t, "timed out waiting for job log messages")
+			}
+			break messageLoop
+		}
+	}
+
+	time.Sleep(1 * time.Second)
+
+	logFilePath := filepath.Join(testConf["LOG_FILE_STORAGE"], resp.JobId)
+	_ = os.Remove(logFilePath)
 }

@@ -2,8 +2,10 @@ package ActService_listen_file
 
 import (
 	"context"
+	"errors"
 	"github.com/D1-3105/ActService/api/gen/ActService"
-	"github.com/sebnyberg/protoio"
+	"github.com/D1-3105/ActService/internal/proto_utils"
+	"github.com/golang/glog"
 	"io"
 )
 
@@ -15,7 +17,7 @@ type EndIterCause struct {
 func ListenFile(
 	ctx context.Context,
 	jobFile io.Reader,
-	readOffset uint32,
+	readOffset uint64,
 	endIterCause *EndIterCause,
 	yieldChan chan *actservice.JobLogMessage,
 	finalizer func(),
@@ -23,8 +25,6 @@ func ListenFile(
 	defer finalizer()
 	defer close(yieldChan)
 	defer close(endIterCause.EndIter)
-
-	reader := protoio.NewReader(jobFile)
 	curOffset := 0
 
 	die := make(chan bool, 3)
@@ -42,13 +42,23 @@ func ListenFile(
 				die <- true
 				return
 			case end := <-endIterCause.EndIter:
+				glog.Warningf("Received EndIter: %v for writer %v", end, jobFile)
 				die <- end
 				return
 			case eof := <-eofIo:
 				shallDie := eof && endIterCause.EndOnEOF
 				select {
 				case die <- shallDie:
+					if shallDie {
+						glog.Warningf(
+							"shallDie %t=[%t and %t] sent to bound channel for writer %v",
+							shallDie, eof, endIterCause.EndOnEOF, jobFile,
+						)
+					}
+
+					break
 				case <-ctx.Done():
+					break
 				}
 				if shallDie {
 					return
@@ -56,14 +66,14 @@ func ListenFile(
 			}
 		}
 	}(ctx)
-
+	everyX := 5
 	// Reader goroutine
 	go func(ctx context.Context) {
 		var blackHole actservice.JobLogMessage
 		// Skip up to readOffset
 		for curOffset < int(readOffset) {
-			err := reader.ReadMsg(&blackHole)
-			if err == io.EOF {
+			err := proto_utils.Read(jobFile, &blackHole)
+			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 				select {
 				case eofIo <- true:
 				case <-ctx.Done():
@@ -88,6 +98,9 @@ func ListenFile(
 				return
 			}
 			curOffset++
+			if curOffset%everyX == 0 {
+				glog.Warningf("Skipped line num %d", curOffset)
+			}
 		}
 
 		// Actual reading loop
@@ -97,11 +110,12 @@ func ListenFile(
 				return
 			default:
 				var logMessage actservice.JobLogMessage
-				err := reader.ReadMsg(&logMessage)
+				err := proto_utils.Read(jobFile, &logMessage)
 				if err != nil {
-					if err == io.EOF {
+					if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 						select {
 						case eofIo <- true:
+							break
 						case <-ctx.Done():
 							return
 						}
@@ -115,10 +129,11 @@ func ListenFile(
 							return
 						}
 						continue
-					}
-					select {
-					case errorChan <- err:
-					case <-ctx.Done():
+					} else {
+						select {
+						case errorChan <- err:
+						case <-ctx.Done():
+						}
 					}
 					return
 				}
@@ -129,6 +144,9 @@ func ListenFile(
 					return
 				}
 				curOffset++
+				if curOffset%everyX == 0 {
+					glog.Warningf("Streamed line num %d from %v", curOffset, jobFile)
+				}
 			}
 		}
 	}(readerCtx)
@@ -137,12 +155,10 @@ func ListenFile(
 	for {
 		select {
 		case err := <-errorChan:
+			glog.Warningf("Error while reading jobFile [%v] message: %v;", jobFile, err)
 			return err
-		case shallDie := <-die:
-			if shallDie {
-				return nil
-			}
 		case <-readerCtx.Done():
+			glog.Warningf("readerCtx.Done for reader obj %v", jobFile)
 			return nil
 		}
 	}
