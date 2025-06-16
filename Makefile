@@ -23,7 +23,7 @@ install_act_persistent:
 docker_builder:
 	docker build -t builder ./Dockerfile.build
 
-docker_final: docker_builder
+docker_final:
 	docker build -t ${DOCKER_IMAGE_NAME} ./Dockerfile.final
 
 registry_login:
@@ -31,6 +31,8 @@ registry_login:
 
 push_image:
 	docker push ${DOCKER_IMAGE_NAME}
+
+upload_docker_artifacts: registry_login docker_builder docker_final push_image
 
 test:
 	go test -v ./tests -args -logtostderr=true -v=1
