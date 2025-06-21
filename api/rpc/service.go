@@ -67,9 +67,14 @@ func (service *ActService) ScheduleActJob(ctx context.Context, job *actservice.J
 	}
 
 	jobFile, err := logFile(jobUid, os.O_CREATE|os.O_WRONLY)
-
+	callArgs := []string{
+		"-P", "ubuntu-latest=node:16-buster",
+	}
+	if job.WorkflowFile != nil {
+		callArgs = append(callArgs, "-W", *job.WorkflowFile)
+	}
 	actCommand := actCmd.NewActCommand(
-		&actEnv, "-P ubuntu-latest=node:16-buster", cloned.Path,
+		&actEnv, callArgs, cloned.Path,
 	)
 	output, err := actCommand.Call(ctx)
 	if err != nil {

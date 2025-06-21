@@ -9,15 +9,16 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 type ActCommand struct {
 	env            *conf.ActEnviron
-	callSubCommand string
+	callSubCommand []string
 	cwd            string
 }
 
-func NewActCommand(env *conf.ActEnviron, callSubCommand string, workingDir string) *ActCommand {
+func NewActCommand(env *conf.ActEnviron, callSubCommand []string, workingDir string) *ActCommand {
 	return &ActCommand{
 		env:            env,
 		callSubCommand: callSubCommand,
@@ -30,8 +31,9 @@ func (a *ActCommand) getExportString() string {
 }
 
 func (a *ActCommand) Call(ctx context.Context) (CommandOutput, error) {
-	glog.V(1).Infof("Act Command Call: >>%s<< in %s", a.env.ActBinaryPath+" "+a.callSubCommand, a.cwd)
-	cmd := exec.CommandContext(ctx, a.env.ActBinaryPath, a.callSubCommand)
+	callSubCommandString := strings.Join(a.callSubCommand, " ")
+	glog.V(1).Infof("Act Command Call: >>%s<< in %s", a.env.ActBinaryPath+" "+callSubCommandString, a.cwd)
+	cmd := exec.CommandContext(ctx, a.env.ActBinaryPath, a.callSubCommand...)
 	cmd.Env = append(os.Environ(), a.getExportString())
 	cmd.Dir = a.cwd
 

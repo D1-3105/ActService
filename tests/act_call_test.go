@@ -60,7 +60,12 @@ func actCmdFixture(t *testing.T) (*actCmd.ActCommand, *gitCmd.ClonedRepo) {
 	var actEnviron conf.ActEnviron
 	conf.NewEnviron(&actEnviron)
 	actCommand := actCmd.NewActCommand(
-		&actEnviron, "-P ubuntu-latest=node:16-buster", clone.Path,
+		&actEnviron,
+		[]string{
+			"-P", "ubuntu-latest=node:16-buster",
+			"-W", ".github/workflows/main.yml",
+		},
+		clone.Path,
 	)
 	return actCommand, clone
 }

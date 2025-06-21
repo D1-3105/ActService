@@ -109,10 +109,11 @@ func TestScheduleActJob_and_Cancel(t *testing.T) {
 		FileListenersPool: ActService_listen_file.NewFileListeners(),
 		JobCtxCancels:     make(map[string]context.CancelFunc),
 	}
-
+	workflowFile := testConf["workflow_file"]
 	resp, err := svc.ScheduleActJob(context.Background(), &actservice.Job{
-		RepoUrl:  testConf["repo_url"],
-		CommitId: testConf["commit_id"],
+		RepoUrl:      testConf["repo_url"],
+		CommitId:     testConf["commit_id"],
+		WorkflowFile: &workflowFile,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
