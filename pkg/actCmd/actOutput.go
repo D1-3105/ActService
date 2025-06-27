@@ -60,6 +60,7 @@ func NewActOutput(ctx context.Context, cmd *exec.Cmd) CommandOutput {
 	}
 	go func(ctx context.Context) {
 		defer close(output.ProgramErrorChan)
+		defer close(output.exitCode)
 		err := cmd.Wait()
 		if err != nil {
 			output.ProgramErrorChan <- err
@@ -100,6 +101,6 @@ func (out *ActOutput) GetExitCode() chan int {
 func (out *ActOutput) GetOutputChan() chan SingleOutput { return out.outChan }
 
 func (out *ActOutput) Close() {
-	close(out.outChan)
-	close(out.exitCode)
+	//close(out.outChan)
+	glog.V(2).Info("ActOutput.Close")
 }

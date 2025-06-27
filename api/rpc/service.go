@@ -42,7 +42,7 @@ func logFile(jobUUID string, flag int) (*os.File, error) {
 	return jobFile, err
 }
 
-func (service *ActService) ScheduleActJob(ctx context.Context, job *actservice.Job) (*actservice.JobResponse, error) {
+func (service *ActService) ScheduleActJob(_ context.Context, job *actservice.Job) (*actservice.JobResponse, error) {
 	jobUid := uuid.New().String()
 	var actEnv conf.ActEnviron
 	conf.NewEnviron(&actEnv)
@@ -70,13 +70,15 @@ func (service *ActService) ScheduleActJob(ctx context.Context, job *actservice.J
 	callArgs := []string{
 		"-P", "ubuntu-latest=node:16-buster",
 	}
-	if job.WorkflowFile != nil {
+	if job.WorkflowFile != nil && *job.WorkflowFile != "" {
 		callArgs = append(callArgs, "-W", *job.WorkflowFile)
 	}
 	actCommand := actCmd.NewActCommand(
 		&actEnv, callArgs, cloned.Path,
 	)
-	output, err := actCommand.Call(ctx)
+	jobContext := context.Background()
+	jobContext, service.JobCtxCancels[jobUid] = context.WithCancel(jobContext)
+	output, err := actCommand.Call(jobContext)
 	if err != nil {
 		defer dispose()
 		defer func(jobFile *os.File) {
@@ -84,8 +86,6 @@ func (service *ActService) ScheduleActJob(ctx context.Context, job *actservice.J
 		}(jobFile)
 		return nil, err
 	}
-	jobContext := context.Background()
-	jobContext, service.JobCtxCancels[jobUid] = context.WithCancel(jobContext)
 
 	go ActService_listen_job.ListenJob(
 		jobContext, output, jobFile, jobUid,
@@ -107,6 +107,7 @@ func (service *ActService) JobLogStream(
 	request *actservice.JobLogRequest,
 	stream actservice.ActService_JobLogStreamServer,
 ) error {
+	glog.Infof("New job stream requested: %s", request.JobId)
 	jobFile, err := logFile(request.JobId, os.O_RDONLY)
 	if err != nil {
 		return err

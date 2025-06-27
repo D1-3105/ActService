@@ -32,8 +32,20 @@ func (a *ActCommand) getExportString() string {
 
 func (a *ActCommand) Call(ctx context.Context) (CommandOutput, error) {
 	callSubCommandString := strings.Join(a.callSubCommand, " ")
-	glog.V(1).Infof("Act Command Call: >>%s<< in %s", a.env.ActBinaryPath+" "+callSubCommandString, a.cwd)
-	cmd := exec.CommandContext(ctx, a.env.ActBinaryPath, a.callSubCommand...)
+	var cmd *exec.Cmd
+	if !a.env.DEBUG {
+		glog.V(1).Infof("Act Command Call: >>%s<< in %s", a.env.ActBinaryPath+" "+callSubCommandString, a.cwd)
+		cmd = exec.CommandContext(ctx, a.env.ActBinaryPath, a.callSubCommand...)
+	} else {
+		txt := fmt.Sprintf(
+			"%s %s | tee /tmp/output.log",
+			a.env.ActBinaryPath,
+			strings.Join(a.callSubCommand, " "),
+		)
+		glog.Infof("sh -c \"%s\"", txt)
+		cmd = exec.CommandContext(ctx, "sh", "-c", txt)
+	}
+
 	cmd.Env = append(os.Environ(), a.getExportString())
 	cmd.Dir = a.cwd
 
