@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 )
 
@@ -67,11 +68,15 @@ func (service *ActService) ScheduleActJob(_ context.Context, job *actservice.Job
 	}
 
 	jobFile, err := logFile(jobUid, os.O_CREATE|os.O_WRONLY)
-	callArgs := []string{
-		"-P", "ubuntu-latest=node:16-buster",
-	}
+	var callArgs []string
 	if job.WorkflowFile != nil && *job.WorkflowFile != "" {
 		callArgs = append(callArgs, "-W", *job.WorkflowFile)
+	}
+	for _, customFlag := range job.ExtraFlags {
+		callArgs = append(callArgs, customFlag)
+	}
+	if !slices.Contains(callArgs, "-P") {
+		callArgs = append(callArgs, "-P", "ubuntu-latest=node:16-buster")
 	}
 	actCommand := actCmd.NewActCommand(
 		&actEnv, callArgs, cloned.Path,

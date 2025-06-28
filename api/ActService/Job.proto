@@ -15,6 +15,7 @@ message Job {
   string repo_url = 1;
   string commit_id = 2;
   optional string workflow_file = 3;
+  repeated string extra_flags = 4;
 }
 
 message JobResponse {
