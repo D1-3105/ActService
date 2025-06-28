@@ -1,0 +1,19 @@
+name: Build docker artifacts
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build and upload docker artifacts
+        run: make upload_docker_artifacts
+        env:
+          REGISTRY_USER: d13105
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          CURRENT_APP_VERSION: latest
