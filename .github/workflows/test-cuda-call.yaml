@@ -1,0 +1,25 @@
+# .github/workflows/test-cuda.yml
+name: Test PyTorch CUDA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-cuda:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install PyTorch with CUDA (via pip)
+        run: |
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+      - name: Check CUDA availability
+        run: |
+          python -c "import torch; assert torch.cuda.is_available(), 'CUDA not available'"
