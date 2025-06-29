@@ -10,7 +10,7 @@ RUN make install_act_persistent
 
 RUN go build -o /bin/actor main.go
 
-FROM gcr.io/distroless/static:nonroot
+FROM debian:bookworm-slim
 COPY --from=builder /bin/actor /actor
 COPY --from=builder /bin/act /bin/act
 ENTRYPOINT ["/actor"]
