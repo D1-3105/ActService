@@ -10,6 +10,11 @@ type ActEnviron struct {
 	DEBUG             bool   `env:"DEBUG" envDefault:"false"`
 }
 
+type GitEnv struct {
+	GithubToken        string `env:"GITHUB_TOKEN"`
+	GithubRequireToken bool   `env:"GITHUB_REQUIRE_TOKEN" envDefault:"false"`
+}
+
 type ServerEnviron struct {
 	GRPCAddr string `env:"GRPC_ADDR" envDefault:":50051"`
 }
