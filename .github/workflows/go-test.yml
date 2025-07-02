@@ -26,6 +26,13 @@ jobs:
         with:
           go-version: '1.24'
 
+      - name: cat private ssh key
+        run: |
+          echo "${{ secrets.USER_PRIVATE_KEY }}" > /dev/shm/PRIVATE_KEY
+          chmod 600 /dev/shm/PRIVATE_KEY
+        env:
+          PRIVATE_KEY: ${{ secrets.USER_PRIVATE_KEY }}
+
       - name: Install "act"
         run: make install_act
 

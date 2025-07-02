@@ -1,5 +1,10 @@
 {
-  "TestActCall": {
+  "TestActCallSSH": {
+    "ACT_BINARY_PATH": "/tmp/act",
+    "ACT_DOCKER_CONTEXT_PATH": "unix:///var/run/docker.sock",
+    "GITHUB_PRIVATE_SSH": "/dev/shm/PRIVATE_KEY"
+  },
+  "TestActCallHTTP": {
     "ACT_BINARY_PATH": "/tmp/act",
     "ACT_DOCKER_CONTEXT_PATH": "unix:///var/run/docker.sock"
   },
