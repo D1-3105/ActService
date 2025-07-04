@@ -5,7 +5,8 @@
     "commit_id": "5c6f585b1f9d8526c8e1672c5f8f00883b895d93",
     "repo_url": "https://github.com/cplee/github-actions-demo.git",
     "workflow_file": ".github/workflows/main.yml",
-    "LOG_FILE_STORAGE": "/tmp"
+    "LOG_FILE_STORAGE": "/tmp",
+    "DEBUG": "false"
   },
   "TestScheduleActJob_and_Cancel":{
     "ACT_BINARY_PATH": "/tmp/act",
@@ -13,6 +14,7 @@
     "commit_id": "5c6f585b1f9d8526c8e1672c5f8f00883b895d93",
     "repo_url": "https://github.com/cplee/github-actions-demo.git",
     "workflow_file": ".github/workflows/main.yml",
-    "LOG_FILE_STORAGE": "/tmp"
+    "LOG_FILE_STORAGE": "/tmp",
+    "DEBUG": "false"
   }
 }

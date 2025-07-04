@@ -13,6 +13,8 @@ type ActEnviron struct {
 type GitEnv struct {
 	GithubToken        string `env:"GITHUB_TOKEN"`
 	GithubRequireToken bool   `env:"GITHUB_REQUIRE_TOKEN" envDefault:"false"`
+	GithubRequireSsh   bool   `env:"GITHUB_REQUIRE_SSH" envDefault:"false"`
+	GithubPrivateSsh   string `env:"GITHUB_PRIVATE_SSH"`
 }
 
 type ServerEnviron struct {
