@@ -14,7 +14,6 @@ import (
 )
 
 func fixtureTestConf(t *testing.T) map[string]string {
-	t.Setenv("DEBUG", "true")
 	fixturesDir, err := filepath.Abs("./fixtures/")
 	require.NoError(t, err)
 
@@ -35,6 +34,7 @@ func fixtureTestConf(t *testing.T) map[string]string {
 
 	cnf, ok := fileContent[t.Name()]
 	require.Truef(t, ok, "no config found for test name %s in %s", t.Name(), testFilePath)
+	t.Setenv("DEBUG", cnf["DEBUG"])
 	return cnf
 }
 
@@ -134,7 +134,7 @@ func TestActCallSSH(t *testing.T) {
 	}
 }
 
-func TestActCallHttp(t *testing.T) {
+func TestActCallHTTP(t *testing.T) {
 	actCommand, cloned := actCmdFixture(t)
 	defer func() { _ = cloned.Dispose() }()
 	output, err := actCommand.Call(t.Context())
