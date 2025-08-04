@@ -111,6 +111,7 @@ func TestScheduleActJob_and_Cancel(t *testing.T) {
 	svc := rpc.ActService{
 		FileListenersPool: ActService_listen_file.NewFileListeners(),
 		JobCtxCancels:     make(map[string]context.CancelFunc),
+		Schedule:          make(chan interface{}, 1),
 	}
 	workflowFile := testConf["workflow_file"]
 	resp, err := svc.ScheduleActJob(
