@@ -47,12 +47,15 @@ func TestScheduleActJob_to_JobLogStream(t *testing.T) {
 	svc := rpc.ActService{
 		FileListenersPool: ActService_listen_file.NewFileListeners(),
 		JobCtxCancels:     make(map[string]context.CancelFunc),
+		Schedule:          make(chan interface{}, 1),
 	}
 
-	resp, err := svc.ScheduleActJob(context.Background(), &actservice.Job{
-		RepoUrl:  testConf["repo_url"],
-		CommitId: testConf["commit_id"],
-	})
+	resp, err := svc.ScheduleActJob(
+		context.Background(), &actservice.Job{
+			RepoUrl:  testConf["repo_url"],
+			CommitId: testConf["commit_id"],
+		},
+	)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	require.NotEmpty(t, resp.JobId)
@@ -110,11 +113,13 @@ func TestScheduleActJob_and_Cancel(t *testing.T) {
 		JobCtxCancels:     make(map[string]context.CancelFunc),
 	}
 	workflowFile := testConf["workflow_file"]
-	resp, err := svc.ScheduleActJob(context.Background(), &actservice.Job{
-		RepoUrl:      testConf["repo_url"],
-		CommitId:     testConf["commit_id"],
-		WorkflowFile: &workflowFile,
-	})
+	resp, err := svc.ScheduleActJob(
+		context.Background(), &actservice.Job{
+			RepoUrl:      testConf["repo_url"],
+			CommitId:     testConf["commit_id"],
+			WorkflowFile: &workflowFile,
+		},
+	)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	require.NotEmpty(t, resp.JobId)
@@ -150,9 +155,11 @@ loop:
 		}
 	}
 
-	cancelResp, err := svc.CancelActJob(context.Background(), &actservice.CancelJob{
-		JobId: resp.JobId,
-	})
+	cancelResp, err := svc.CancelActJob(
+		context.Background(), &actservice.CancelJob{
+			JobId: resp.JobId,
+		},
+	)
 	require.NoError(t, err)
 	require.NotNil(t, cancelResp)
 	t.Logf("Cancel response: %s", cancelResp.Status)
@@ -164,10 +171,12 @@ loop:
 		t.Fatal("timeout waiting for stream to finish after cancel")
 	}
 
-	require.Eventually(t, func() bool {
-		_, stillExists := svc.JobCtxCancels[resp.JobId]
-		return !stillExists
-	}, 20*time.Second, 100*time.Millisecond, "jobCtxCancels map should not contain canceled job")
+	require.Eventually(
+		t, func() bool {
+			_, stillExists := svc.JobCtxCancels[resp.JobId]
+			return !stillExists
+		}, 20*time.Second, 100*time.Millisecond, "jobCtxCancels map should not contain canceled job",
+	)
 
 	logFilePath := filepath.Join(testConf["LOG_FILE_STORAGE"], resp.JobId)
 	_ = os.Remove(logFilePath)

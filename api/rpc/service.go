@@ -20,6 +20,7 @@ import (
 
 type ActService struct {
 	actservice.UnimplementedActServiceServer
+	Schedule          chan interface{}
 	JobCtxCancels     map[string]context.CancelFunc
 	FileListenersPool *ActService_listen_file.LogFileListeners
 }
@@ -29,6 +30,7 @@ func NewActService() actservice.ActServiceServer {
 	return &ActService{
 		JobCtxCancels:     jobCtxList,
 		FileListenersPool: ActService_listen_file.NewFileListeners(),
+		Schedule:          make(chan interface{}, 1),
 	}
 }
 
@@ -83,6 +85,16 @@ func (service *ActService) ScheduleActJob(_ context.Context, job *actservice.Job
 	)
 	jobContext := context.Background()
 	jobContext, service.JobCtxCancels[jobUid] = context.WithCancel(jobContext)
+	glog.Infof("ActService.ScheduleActJob: context of job %s, acquiring Schedule lock", jobUid)
+	select {
+	case service.Schedule <- struct{}{}:
+		glog.Infof("ActService.ScheduleActJob: context of job %s, acquired Schedule lock", jobUid)
+		break
+	case <-time.After(30 * time.Minute):
+		glog.Errorf("ActService.ScheduleActJob: context of job %s, timeout waiting for Schedule lock", jobUid)
+		break
+	}
+
 	output, err := actCommand.Call(jobContext)
 	if err != nil {
 		defer dispose()
@@ -98,6 +110,16 @@ func (service *ActService) ScheduleActJob(_ context.Context, job *actservice.Job
 		func() {
 			defer dispose()
 			defer delete(service.JobCtxCancels, jobUid)
+			defer func() {
+				select {
+				case <-service.Schedule:
+					break
+				case <-time.After(2 * time.Second):
+					break
+				}
+				glog.Infof("ActService.ScheduleActJob: context of job %s, released Schedule lock", jobUid)
+			}()
+			defer service.JobCtxCancels[jobUid]()
 			defer func(fileListenersCtx *ActService_listen_file.LogFileListeners, id string) {
 				err := fileListenersCtx.JobDone(id)
 				glog.V(1).Infof("ActService.ScheduleActJob: JobDone: id: %s, err: %v", id, err)
