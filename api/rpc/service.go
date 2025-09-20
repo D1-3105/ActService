@@ -77,8 +77,20 @@ func (service *ActService) ScheduleActJob(_ context.Context, job *actservice.Job
 	for _, customFlag := range job.ExtraFlags {
 		callArgs = append(callArgs, customFlag)
 	}
+
 	if !slices.Contains(callArgs, "-P") {
 		callArgs = append(callArgs, "-P", "ubuntu-latest=node:16-buster")
+	}
+	runIdAdded := false
+	for idx, argument := range callArgs {
+		if argument == "--container-options" {
+			callArgs[idx+1] = fmt.Sprintf("-e RUN_ID=%s %s", jobUid, callArgs[idx+1])
+			runIdAdded = true
+			break
+		}
+	}
+	if !runIdAdded {
+		callArgs = append(callArgs, "--container-options", fmt.Sprintf("-e RUN_ID=%s", jobUid))
 	}
 	actCommand := actCmd.NewActCommand(
 		&actEnv, callArgs, cloned.Path,
