@@ -103,6 +103,10 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 }
 
 func (clone ClonedRepo) Dispose() error {
-	err := os.RemoveAll(clone.Path)
-	return err
+	gitEnviron := conf.GitEnv{}
+	if gitEnviron.TeardownFolder {
+		err := os.RemoveAll(clone.Path)
+		return err
+	}
+	return nil
 }
