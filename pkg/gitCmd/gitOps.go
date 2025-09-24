@@ -37,10 +37,14 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 	var err error
 	var clone *git.Repository
 	if gitEnviron.GithubRequireToken && strings.HasPrefix(gf.Repo.Url, "http") {
-		clone, err = git.PlainClone(pth, false, &git.CloneOptions{URL: gf.Repo.Url, Depth: 1, Auth: &http.BasicAuth{
-			Username: "x-token",
-			Password: gitEnviron.GithubToken,
-		}})
+		clone, err = git.PlainClone(
+			pth, false, &git.CloneOptions{
+				URL: gf.Repo.Url, Depth: 1, Auth: &http.BasicAuth{
+					Username: "x-token",
+					Password: gitEnviron.GithubToken,
+				},
+			},
+		)
 	} else if gitEnviron.GithubRequireSsh && strings.HasPrefix(gf.Repo.Url, "git@") {
 		keyPath := gitEnviron.GithubPrivateSsh
 		keyContent, err := os.ReadFile(keyPath)
@@ -64,13 +68,15 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 			glog.Errorf("Failed to set known_hosts callback: %v", err)
 			return nil, err
 		}
-		clone, err = git.PlainClone(pth, false, &git.CloneOptions{
-			URL:   gf.Repo.Url,
-			Auth:  auth,
-			Depth: 1,
-		})
+		clone, err = git.PlainClone(
+			pth, false, &git.CloneOptions{
+				URL:   gf.Repo.Url,
+				Auth:  auth,
+				Depth: 100,
+			},
+		)
 	} else {
-		clone, err = git.PlainClone(pth, false, &git.CloneOptions{URL: gf.Repo.Url, Depth: 1})
+		clone, err = git.PlainClone(pth, false, &git.CloneOptions{URL: gf.Repo.Url, Depth: 100})
 	}
 	if err != nil {
 		glog.Errorf("Error cloning git repo %s: %v", gf.Repo.Url, err)
