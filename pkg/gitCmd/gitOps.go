@@ -39,7 +39,7 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 	if gitEnviron.GithubRequireToken && strings.HasPrefix(gf.Repo.Url, "http") {
 		clone, err = git.PlainClone(
 			pth, false, &git.CloneOptions{
-				URL: gf.Repo.Url, Depth: 100, Auth: &http.BasicAuth{
+				URL: gf.Repo.Url, Auth: &http.BasicAuth{
 					Username: "x-token",
 					Password: gitEnviron.GithubToken,
 				},
@@ -70,13 +70,12 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 		}
 		clone, err = git.PlainClone(
 			pth, false, &git.CloneOptions{
-				URL:   gf.Repo.Url,
-				Auth:  auth,
-				Depth: 100,
+				URL:  gf.Repo.Url,
+				Auth: auth,
 			},
 		)
 	} else {
-		clone, err = git.PlainClone(pth, false, &git.CloneOptions{URL: gf.Repo.Url, Depth: 100})
+		clone, err = git.PlainClone(pth, false, &git.CloneOptions{URL: gf.Repo.Url})
 	}
 	if err != nil {
 		glog.Errorf("Error cloning git repo %s: %v", gf.Repo.Url, err)
