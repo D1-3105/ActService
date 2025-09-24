@@ -62,11 +62,16 @@ func gitFixtureSsh(t *testing.T) (*gitCmd.GitFolder, *gitCmd.ClonedRepo) {
 	t.Setenv("ACT_DOCKER_CONTEXT_PATH", testConf["ACT_DOCKER_CONTEXT_PATH"])
 	t.Setenv("GITHUB_PRIVATE_SSH", testConf["GITHUB_PRIVATE_SSH"])
 	t.Setenv("GITHUB_REQUIRE_SSH", "true")
-
+	testUrl, ok := testConf["url"]
+	testCommit := testConf["commit"]
+	if !ok {
+		testUrl = "git@github.com:cplee/github-actions-demo.git"
+		testCommit = "5c6f585b1f9d8526c8e1672c5f8f00883b895d93"
+	}
 	gitFolder, err := gitCmd.NewGitFolder(
 		&gitCmd.GitRepo{
-			Url:      "git@github.com:cplee/github-actions-demo.git",
-			CommitId: "5c6f585b1f9d8526c8e1672c5f8f00883b895d93",
+			Url:      testUrl,
+			CommitId: testCommit,
 		},
 		"/dev/shm/tests",
 	)
@@ -89,6 +94,10 @@ func actCmdFixture(t *testing.T) (*actCmd.ActCommand, *gitCmd.ClonedRepo) {
 		clone.Path,
 	)
 	return actCommand, clone
+}
+
+func TestGitClone(t *testing.T) {
+	gitFixtureSsh(t)
 }
 
 func actCmdFixtureSSH(t *testing.T) (*actCmd.ActCommand, *gitCmd.ClonedRepo) {

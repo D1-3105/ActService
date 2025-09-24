@@ -43,6 +43,7 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 					Username: "x-token",
 					Password: gitEnviron.GithubToken,
 				},
+				SingleBranch: false,
 			},
 		)
 	} else if gitEnviron.GithubRequireSsh && strings.HasPrefix(gf.Repo.Url, "git@") {
@@ -70,12 +71,13 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 		}
 		clone, err = git.PlainClone(
 			pth, false, &git.CloneOptions{
-				URL:  gf.Repo.Url,
-				Auth: auth,
+				URL:          gf.Repo.Url,
+				Auth:         auth,
+				SingleBranch: false,
 			},
 		)
 	} else {
-		clone, err = git.PlainClone(pth, false, &git.CloneOptions{URL: gf.Repo.Url})
+		clone, err = git.PlainClone(pth, false, &git.CloneOptions{URL: gf.Repo.Url, SingleBranch: false})
 	}
 	if err != nil {
 		glog.Errorf("Error cloning git repo %s: %v", gf.Repo.Url, err)
@@ -92,7 +94,7 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 	}
 
 	if err = worktree.Checkout(&git.CheckoutOptions{Hash: hash}); err != nil {
-		glog.Errorf("Error checking out git repo %s: %v", gf.Repo.Url, err)
+		glog.Errorf("Error checking out git repo %s@%s: %v", gf.Repo.Url, hash.String(), err)
 		return nil, err
 	}
 	return &ClonedRepo{
