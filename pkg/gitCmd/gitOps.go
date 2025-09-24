@@ -39,7 +39,7 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 	if gitEnviron.GithubRequireToken && strings.HasPrefix(gf.Repo.Url, "http") {
 		clone, err = git.PlainClone(
 			pth, false, &git.CloneOptions{
-				URL: gf.Repo.Url, Depth: 1, Auth: &http.BasicAuth{
+				URL: gf.Repo.Url, Depth: 100, Auth: &http.BasicAuth{
 					Username: "x-token",
 					Password: gitEnviron.GithubToken,
 				},
