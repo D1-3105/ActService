@@ -2,15 +2,12 @@ package gitCmd
 
 import (
 	"errors"
+	"fmt"
 	"github.com/D1-3105/ActService/conf"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	gitssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/golang/glog"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/ssh"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -32,73 +29,59 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 	id := uuid.New()
 	pth := filepath.Join(gf.Path, id.String())
 	glog.V(1).Infof("Cloning git repo %s -> %s", gf.Repo.Url, pth)
+
 	gitEnviron := conf.GitEnv{}
 	conf.NewEnviron(&gitEnviron)
-	var err error
-	var clone *git.Repository
+	var cmd *exec.Cmd
+
+	if err := os.MkdirAll(pth, 0755); err != nil {
+		glog.Errorf("Error creating directory %s: %v", pth, err)
+		return nil, err
+	}
+
 	if gitEnviron.GithubRequireToken && strings.HasPrefix(gf.Repo.Url, "http") {
-		clone, err = git.PlainClone(
-			pth, false, &git.CloneOptions{
-				URL: gf.Repo.Url, Auth: &http.BasicAuth{
-					Username: "x-token",
-					Password: gitEnviron.GithubToken,
-				},
-				SingleBranch: false,
-			},
+		authUrl := strings.Replace(
+			gf.Repo.Url, "https://", fmt.Sprintf("https://x-token:%s@", gitEnviron.GithubToken), 1,
 		)
+		authUrl = strings.Replace(
+			authUrl, "http://", fmt.Sprintf("http://x-token:%s@", gitEnviron.GithubToken), 1,
+		)
+
+		cmd = exec.Command("git", "clone", authUrl, pth)
+
 	} else if gitEnviron.GithubRequireSsh && strings.HasPrefix(gf.Repo.Url, "git@") {
-		keyPath := gitEnviron.GithubPrivateSsh
-		keyContent, err := os.ReadFile(keyPath)
-		if err != nil {
-			glog.Errorf("Error reading SSH private key: %v", err)
-			return nil, err
-		}
+		cmd = exec.Command("git", "clone", gf.Repo.Url, pth)
 
-		signer, err := ssh.ParsePrivateKey(keyContent)
-		if err != nil {
-			glog.Errorf("Error parsing SSH private key: %v", err)
-			return nil, err
-		}
+		sshCmd := fmt.Sprintf("ssh -i %s -o StrictHostKeyChecking=yes", gitEnviron.GithubPrivateSsh)
+		cmd.Env = append(os.Environ(), fmt.Sprintf("GIT_SSH_COMMAND=%s", sshCmd))
 
-		auth := &gitssh.PublicKeys{
-			User:   "git",
-			Signer: signer,
-		}
-		auth.HostKeyCallback, err = gitssh.NewKnownHostsCallback()
-		if err != nil {
-			glog.Errorf("Failed to set known_hosts callback: %v", err)
-			return nil, err
-		}
-		clone, err = git.PlainClone(
-			pth, false, &git.CloneOptions{
-				URL:          gf.Repo.Url,
-				Auth:         auth,
-				SingleBranch: false,
-			},
-		)
 	} else {
-		clone, err = git.PlainClone(pth, false, &git.CloneOptions{URL: gf.Repo.Url, SingleBranch: false})
-	}
-	if err != nil {
-		glog.Errorf("Error cloning git repo %s: %v", gf.Repo.Url, err)
-		return nil, err
-	}
-	if clone == nil {
-		return nil, errors.New("git repo is nil")
-	}
-	hash := plumbing.NewHash(gf.Repo.CommitId)
-	worktree, err := clone.Worktree()
-	if err != nil {
-		glog.Errorf("Error cloning git repo %s: %v", gf.Repo.Url, err)
-		return nil, err
+		cmd = exec.Command("git", "clone", gf.Repo.Url, pth)
 	}
 
-	if err = worktree.Checkout(&git.CheckoutOptions{Hash: hash}); err != nil {
-		glog.Errorf("Error checking out git repo %s@%s: %v", gf.Repo.Url, hash.String(), err)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		glog.Errorf("Error cloning git repo %s: %v\nOutput: %s", gf.Repo.Url, err, string(output))
+		_ = os.RemoveAll(pth)
+		return nil, err
+	}
+	if _, err := os.Stat(filepath.Join(pth, ".git")); os.IsNotExist(err) {
+		glog.Errorf("Git repository was not cloned properly to %s", pth)
+		_ = os.RemoveAll(pth)
+		return nil, errors.New("git repo clone failed")
+	}
+	checkoutCmd := exec.Command("git", "checkout", gf.Repo.CommitId)
+	checkoutCmd.Dir = pth
+
+	if output, err := checkoutCmd.CombinedOutput(); err != nil {
+		glog.Errorf(
+			"Error checking out git repo %s@%s: %v\nOutput: %s",
+			gf.Repo.Url, gf.Repo.CommitId, err, string(output),
+		)
+		_ = os.RemoveAll(pth)
 		return nil, err
 	}
 	return &ClonedRepo{
-		gf.Repo, clone, pth,
+		gf.Repo, pth,
 	}, nil
 }
 
