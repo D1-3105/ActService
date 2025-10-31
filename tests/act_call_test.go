@@ -97,7 +97,13 @@ func actCmdFixture(t *testing.T) (*actCmd.ActCommand, *gitCmd.ClonedRepo) {
 }
 
 func TestGitClone(t *testing.T) {
-	gitFixtureSsh(t)
+	_, cloned := gitFixtureSsh(t)
+	err := cloned.Dispose()
+	if err != nil {
+		t.Fatalf("Error disposing cloned repo: %v", err)
+	}
+	_, err = os.Stat(filepath.Join(cloned.Path))
+	require.Error(t, err)
 }
 
 func actCmdFixtureSSH(t *testing.T) (*actCmd.ActCommand, *gitCmd.ClonedRepo) {
@@ -117,7 +123,14 @@ func actCmdFixtureSSH(t *testing.T) (*actCmd.ActCommand, *gitCmd.ClonedRepo) {
 
 func TestActCallSSH(t *testing.T) {
 	actCommand, cloned := actCmdFixtureSSH(t)
-	defer func() { _ = cloned.Dispose() }()
+	defer func() {
+		err := cloned.Dispose()
+		if err != nil {
+			t.Fatalf("Error disposing cloned repo: %v", err)
+		}
+		_, err = os.Stat(filepath.Join(cloned.Path))
+		require.Error(t, err)
+	}()
 	output, err := actCommand.Call(t.Context())
 	require.NoError(t, err)
 
@@ -145,7 +158,14 @@ func TestActCallSSH(t *testing.T) {
 
 func TestActCallHTTP(t *testing.T) {
 	actCommand, cloned := actCmdFixture(t)
-	defer func() { _ = cloned.Dispose() }()
+	defer func() {
+		err := cloned.Dispose()
+		if err != nil {
+			t.Fatalf("Error disposing cloned repo: %v", err)
+		}
+		_, err = os.Stat(filepath.Join(cloned.Path))
+		require.Error(t, err)
+	}()
 	output, err := actCommand.Call(t.Context())
 	require.NoError(t, err)
 
