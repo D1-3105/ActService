@@ -102,7 +102,7 @@ func (service *ActService) ScheduleActJob(_ context.Context, job *actservice.Job
 	case service.Schedule <- struct{}{}:
 		glog.Infof("ActService.ScheduleActJob: context of job %s, acquired Schedule lock", jobUid)
 		break
-	case <-time.After(30 * time.Minute):
+	case <-time.After(time.Duration(actEnv.JobTimeout) * time.Second):
 		glog.Errorf("ActService.ScheduleActJob: context of job %s, timeout waiting for Schedule lock", jobUid)
 		break
 	}

@@ -8,6 +8,7 @@ type ActEnviron struct {
 	ActBinaryPath     string `env:"ACT_BINARY_PATH"`
 	DockerContextPath string `env:"ACT_DOCKER_CONTEXT_PATH"`
 	DEBUG             bool   `env:"DEBUG" envDefault:"false"`
+	JobTimeout        int    `env:"JOB_TIMEOUT_SECONDS" envDefault:"5400"`
 }
 
 type GitEnv struct {
