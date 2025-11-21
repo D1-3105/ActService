@@ -33,5 +33,5 @@ push_image:
 upload_docker_artifacts: registry_login docker_final push_image
 
 test:
-	go test -v ./tests -args -logtostderr=true -v=1
+	go test -v ./tests -args -logtostderr=true -v=2
 

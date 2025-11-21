@@ -62,11 +62,16 @@ func gitFixtureSsh(t *testing.T) (*gitCmd.GitFolder, *gitCmd.ClonedRepo) {
 	t.Setenv("ACT_DOCKER_CONTEXT_PATH", testConf["ACT_DOCKER_CONTEXT_PATH"])
 	t.Setenv("GITHUB_PRIVATE_SSH", testConf["GITHUB_PRIVATE_SSH"])
 	t.Setenv("GITHUB_REQUIRE_SSH", "true")
-
+	testUrl, ok := testConf["url"]
+	testCommit := testConf["commit"]
+	if !ok {
+		testUrl = "git@github.com:cplee/github-actions-demo.git"
+		testCommit = "5c6f585b1f9d8526c8e1672c5f8f00883b895d93"
+	}
 	gitFolder, err := gitCmd.NewGitFolder(
 		&gitCmd.GitRepo{
-			Url:      "git@github.com:cplee/github-actions-demo.git",
-			CommitId: "5c6f585b1f9d8526c8e1672c5f8f00883b895d93",
+			Url:      testUrl,
+			CommitId: testCommit,
 		},
 		"/dev/shm/tests",
 	)
@@ -91,6 +96,16 @@ func actCmdFixture(t *testing.T) (*actCmd.ActCommand, *gitCmd.ClonedRepo) {
 	return actCommand, clone
 }
 
+func TestGitClone(t *testing.T) {
+	_, cloned := gitFixtureSsh(t)
+	err := cloned.Dispose()
+	if err != nil {
+		t.Fatalf("Error disposing cloned repo: %v", err)
+	}
+	_, err = os.Stat(filepath.Join(cloned.Path))
+	require.Error(t, err)
+}
+
 func actCmdFixtureSSH(t *testing.T) (*actCmd.ActCommand, *gitCmd.ClonedRepo) {
 	_, clone := gitFixtureSsh(t)
 	var actEnviron conf.ActEnviron
@@ -108,7 +123,14 @@ func actCmdFixtureSSH(t *testing.T) (*actCmd.ActCommand, *gitCmd.ClonedRepo) {
 
 func TestActCallSSH(t *testing.T) {
 	actCommand, cloned := actCmdFixtureSSH(t)
-	defer func() { _ = cloned.Dispose() }()
+	defer func() {
+		err := cloned.Dispose()
+		if err != nil {
+			t.Fatalf("Error disposing cloned repo: %v", err)
+		}
+		_, err = os.Stat(filepath.Join(cloned.Path))
+		require.Error(t, err)
+	}()
 	output, err := actCommand.Call(t.Context())
 	require.NoError(t, err)
 
@@ -136,7 +158,15 @@ func TestActCallSSH(t *testing.T) {
 
 func TestActCallHTTP(t *testing.T) {
 	actCommand, cloned := actCmdFixture(t)
-	defer func() { _ = cloned.Dispose() }()
+	defer func() {
+		t.Logf("Cleaning up cloned repo %s...", cloned.Path)
+		err := cloned.Dispose()
+		if err != nil {
+			t.Fatalf("Error disposing cloned repo: %v", err)
+		}
+		_, err = os.Stat(filepath.Join(cloned.Path))
+		require.Error(t, err)
+	}()
 	output, err := actCommand.Call(t.Context())
 	require.NoError(t, err)
 
