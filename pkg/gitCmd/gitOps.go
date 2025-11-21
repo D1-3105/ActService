@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -86,8 +87,16 @@ func (gf *GitFolder) Clone() (*ClonedRepo, error) {
 }
 
 func (clone ClonedRepo) Dispose() error {
-	gitEnviron := conf.GitEnv{}
+	teardown, err := strconv.ParseBool(os.Getenv("ACT_TEARDOWN_GIT_FOLDER"))
+	if err != nil {
+		teardown = true
+	}
+	gitEnviron := conf.GitEnv{
+		TeardownFolder: teardown,
+	}
+	glog.V(2).Infof("gitEnviron.TeardownFolder = %t", gitEnviron.TeardownFolder)
 	if gitEnviron.TeardownFolder {
+		glog.V(1).Infof("Removing cloned git repo %s!", clone.Path)
 		err := os.RemoveAll(clone.Path)
 		return err
 	}

@@ -159,6 +159,7 @@ func TestActCallSSH(t *testing.T) {
 func TestActCallHTTP(t *testing.T) {
 	actCommand, cloned := actCmdFixture(t)
 	defer func() {
+		t.Logf("Cleaning up cloned repo %s...", cloned.Path)
 		err := cloned.Dispose()
 		if err != nil {
 			t.Fatalf("Error disposing cloned repo: %v", err)

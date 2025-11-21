@@ -11,7 +11,7 @@ type ActEnviron struct {
 }
 
 type GitEnv struct {
-	TeardownFolder     bool   `env:"TEARDOWN_FOLDER" envDefault:"true"`
+	TeardownFolder     bool   `env:"ACT_TEARDOWN_FOLDER" envDefault:"true"`
 	GithubToken        string `env:"GITHUB_TOKEN"`
 	GithubRequireToken bool   `env:"GITHUB_REQUIRE_TOKEN" envDefault:"false"`
 	GithubRequireSsh   bool   `env:"GITHUB_REQUIRE_SSH" envDefault:"false"`
