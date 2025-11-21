@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 )
 
 type ActCommand struct {
@@ -27,7 +28,11 @@ func NewActCommand(env *conf.ActEnviron, callSubCommand []string, workingDir str
 }
 
 func (a *ActCommand) getExportString() string {
-	return fmt.Sprintf("DOCKER_HOST=%s", a.env.DockerContextPath)
+	val := a.env.DockerContextPath
+	if val == "" {
+		val = `""`
+	}
+	return fmt.Sprintf("DOCKER_HOST=%s", val)
 }
 
 func (a *ActCommand) Call(ctx context.Context) (CommandOutput, error) {
@@ -61,23 +66,27 @@ func (a *ActCommand) Call(ctx context.Context) (CommandOutput, error) {
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
-
 	glog.V(1).Infof("Started new process: %d", cmd.Process.Pid)
-
-	actOutput := NewActOutput(ctx, cmd)
-
+	var wg sync.WaitGroup
+	wg.Add(2)
+	actOutput := NewActOutput(ctx, cmd, &wg)
 	readPipe := func(ctx context.Context, pipe io.Reader, outType ProcessOutType) {
-
-		scanner := bufio.NewScanner(pipe)
-		for scanner.Scan() {
-			actOutput.AddOutput(ctx, scanner.Bytes(), outType)
-		}
-		if err := scanner.Err(); err != nil {
-			glog.Errorf("Error scanning output: %s", err)
+		defer wg.Done()
+		reader := bufio.NewReader(pipe)
+		for {
+			line, err := reader.ReadBytes('\n')
+			if len(line) > 0 {
+				actOutput.AddOutput(ctx, line, outType)
+			}
+			if err != nil {
+				if err != io.EOF {
+					glog.Errorf("Error reading output: %s", err)
+				}
+				break
+			}
 		}
 	}
 	go func(ctx context.Context) {
-		defer actOutput.Close()
 		go readPipe(ctx, stdout, StdOut)
 		go readPipe(ctx, stderr, StdErr)
 		select {

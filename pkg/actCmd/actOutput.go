@@ -6,6 +6,7 @@ import (
 	"github.com/golang/glog"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 )
 
@@ -51,7 +52,7 @@ type ActOutput struct {
 	ProgramErrorChan chan error
 }
 
-func NewActOutput(ctx context.Context, cmd *exec.Cmd) CommandOutput {
+func NewActOutput(ctx context.Context, cmd *exec.Cmd, waitG *sync.WaitGroup) CommandOutput {
 	output := ActOutput{
 		outChan:          make(chan SingleOutput, 100),
 		exitCode:         make(chan int, 1),
@@ -66,6 +67,8 @@ func NewActOutput(ctx context.Context, cmd *exec.Cmd) CommandOutput {
 			output.ProgramErrorChan <- err
 		}
 		output.exitCode <- cmd.ProcessState.ExitCode()
+		waitG.Wait()
+		output.Close()
 	}(ctx)
 	return &output
 }
@@ -101,6 +104,6 @@ func (out *ActOutput) GetExitCode() chan int {
 func (out *ActOutput) GetOutputChan() chan SingleOutput { return out.outChan }
 
 func (out *ActOutput) Close() {
-	//close(out.outChan)
+	// close(out.outChan)
 	glog.V(2).Info("ActOutput.Close")
 }

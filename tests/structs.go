@@ -25,12 +25,12 @@ func (d *DummyJobOutput) ProgramError() chan error {
 }
 
 func (d *DummyJobOutput) AddOutput(_ context.Context, _ []byte, _ actCmd.ProcessOutType) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (d *DummyJobOutput) SetExitCode(_ int) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
@@ -58,17 +58,27 @@ func SuccessfulDummyJobOutput() *DummyJobOutput {
 	}
 }
 
-func DummyEmulator(_ context.Context, dummy *DummyJobOutput) {
+func DummyEmulator(_ context.Context, dummy *DummyJobOutput, longInput bool) {
 	if dummy.getOutputSuccessful {
 		for i := 0; i < 5; i++ {
 			output := actCmd.SingleOutput{T: actCmd.StdOut, Time: time.Now()}
 			output.SetLine([]byte(fmt.Sprintf("line %d", i+1)))
-			glog.V(1).Info("Input output:", output)
+			glog.V(1).Info("Input output:", output.FormatRead()[0:min(len(output.FormatRead()), 400)])
 			dummy.outputChan <- output
 
 			output2 := actCmd.SingleOutput{T: actCmd.StdErr, Time: time.Now()}
-			output2.SetLine([]byte(fmt.Sprintf("line %d", i+1)))
-			glog.V(1).Info("Input output2:", output2)
+			if !longInput {
+				output2.SetLine([]byte(fmt.Sprintf("line %d", i+1)))
+				glog.V(1).Info("Input output2:", output2.FormatRead()[0:min(len(output2.FormatRead()), 400)])
+			} else {
+				ultraLongString := make([]byte, 1000000)
+				for i := range ultraLongString {
+					ultraLongString[i] = 'a'
+				}
+				ultraLongString[len(ultraLongString)-1] = 0
+				output2.SetLine(ultraLongString)
+			}
+
 			dummy.outputChan <- output2
 			time.Sleep(1 * time.Second)
 		}
