@@ -20,7 +20,11 @@ type GitEnv struct {
 }
 
 type ServerEnviron struct {
-	GRPCAddr string `env:"GRPC_ADDR" envDefault:":50051"`
+	GRPCAddr       string `env:"GRPC_ADDR" envDefault:":50051"`
+	GRPSCertFile   string `env:"GRPC_CERT_FILE"`
+	GRPCKeyFile    string `env:"GRPC_KEY_FILE"`
+	GRPCClientCAFile string `env:"GRPC_CLIENT_CA_FILE"`
+	GRPCRequireClientAuth bool `env:"GRPC_REQUIRE_CLIENT_AUTH" envDefault:"false"`
 }
 
 type StorageEnviron struct {
